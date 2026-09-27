@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #2c3e50; }
+        .form-section { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 25px; border-radius: 8px; background-color: #fafafa; }
+        .form-section h3 { margin-top: 0; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 5px; display: inline-block; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        
+        .btn { padding: 10px 20px; font-size: 14px; font-weight: bold; background-color: #3498db; color: white; border: none; cursor: pointer; border-radius: 5px; transition: background 0.3s; }
+        .btn:hover { background-color: #2980b9; }
+        .btn-danger { background-color: #e74c3c; padding: 8px 15px; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-success { background-color: #2ecc71; width: 100%; font-size: 18px; padding: 15px; margin-top: 10px; }
+        .btn-success:hover { background-color: #27ae60; }
+        .btn-outline { background-color: transparent; border: 2px solid #3498db; color: #3498db; }
+        .btn-outline:hover { background-color: #3498db; color: white; }
+
+        /* Print Styles */
+        @media print {
+            body { background-color: #fff; }
+            body * { visibility: hidden; }
+            .container { box-shadow: none; padding: 0; }
+            #po-output, #po-output * { visibility: visible; }
+            #po-output { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+
+        #po-output { display: none; }
+        #po-output.active { display: block; }
+        
+        .po-print-header { display: flex; justify-content: space-between; border-bottom: 2px solid #2c3e50; padding-bottom: 20px; margin-bottom: 30px; }
+        .po-print-title { font-size: 32px; font-weight: 800; color: #2c3e50; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .po-meta { text-align: right; }
+        .po-meta div { margin-bottom: 5px; font-size: 16px; }
+        
+        .po-addresses { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .address-block { width: 45%; }
+        .address-title { font-size: 12px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+        .company-name { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+        
+        .total-row { font-weight: bold; text-align: right; background-color: #f8f9fa; }
+        .grand-total-val { font-size: 18px; color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+<div class="container no-print" id="input-section">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1>Purchase Order Generator</h1>
+        <p style="color: #7f8c8d;">Fill in the details below to instantly generate a clean purchase order.</p>
+    </div>
+    
+    <div class="grid-2">
+        <div class="form-section">
+            <h3>From (Your Company)</h3>
+            <div class="form-group"><label>Company Name</label><input type="text" id="from-company" placeholder="e.g. Acme Corp"></div>
+            <div class="form-group"><label>Address Line 1</label><input type="text" id="from-address1" placeholder="123 Business Rd."></div>
+            <div class="form-group"><label>Address Line 2 (City, State, Zip)</label><input type="text" id="from-address2" placeholder="Suite 100, New York, NY 10001"></div>
+            <div class="form-group"><label>Email / Phone</label><input type="text" id="from-contact" placeholder="contact@acme.com"></div>
+        </div>
+
+        <div class="form-section">
+            <h3>To (Vendor)</h3>
+            <div class="form-group"><label>Vendor Name</label><input type="text" id="to-vendor" placeholder="e.g. Supplier Inc"></div>
+            <div class="form-group"><label>Address Line 1</label><input type="text" id="to-address1" placeholder="456 Factory Ln."></div>
+            <div class="form-group"><label>Address Line 2 (City, State, Zip)</label><input type="text" id="to-address2" placeholder="Industrial Park, NJ 07001"></div>
+            <div class="form-group"><label>Email / Phone</label><input type="text" id="to-contact" placeholder="sales@supplier.com"></div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h3>PO Details</h3>
+        <div class="grid-2">
+            <div class="form-group"><label>Purchase Order Number</label><input type="text" id="po-number" placeholder="PO-1001"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="po-date"></div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h3>Items</h3>
+        <table id="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Description</th>
+                    <th style="width: 15%;">Quantity</th>
+                    <th style="width: 20%;">Unit Price ($)</th>
+                    <th style="width: 15%;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="items-body">
+                <tr>
+                    <td><input type="text" class="item-desc" placeholder="Item description"></td>
+                    <td><input type="number" class="item-qty" value="1" min="1"></td>
+                    <td><input type="number" class="item-price" value="0.00" step="0.01"></td>
+                    <td style="text-align: center;"><button class="btn btn-danger" onclick="removeItem(this)">Remove</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn btn-outline" onclick="addItem()">+ Add Another Item</button>
+    </div>
+
+    <button class="btn btn-success" onclick="generatePO()">Generate Purchase Order</button>
+</div>
+
+<div class="container" id="po-output">
+    <div class="no-print" style="margin-bottom: 30px; display: flex; gap: 10px;">
+        <button class="btn btn-outline" onclick="editPO()">← Back to Edit</button>
+        <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    
+    <div class="po-print-header">
+        <div>
+            <h1 class="po-print-title">Purchase Order</h1>
+        </div>
+        <div class="po-meta">
+            <div><strong>PO Number:</strong> <span id="out-po-number"></span></div>
+            <div><strong>Date:</strong> <span id="out-po-date"></span></div>
+        </div>
+    </div>
+
+    <div class="po-addresses">
+        <div class="address-block">
+            <div class="address-title">Vendor</div>
+            <div class="company-name" id="out-to-vendor"></div>
+            <div id="out-to-address1"></div>
+            <div id="out-to-address2"></div>
+            <div id="out-to-contact" style="margin-top: 5px; color: #555;"></div>
+        </div>
+        
+        <div class="address-block">
+            <div class="address-title">Ship To / Bill To</div>
+            <div class="company-name" id="out-from-company"></div>
+            <div id="out-from-address1"></div>
+            <div id="out-from-address2"></div>
+            <div id="out-from-contact" style="margin-top: 5px; color: #555;"></div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Unit Price</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody id="out-items-body">
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="total-row">Grand Total:</td>
+                <td id="out-grand-total" class="total-row grand-total-val"></td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <div style="margin-top: 50px; border-top: 1px solid #ccc; padding-top: 20px; font-size: 12px; color: #7f8c8d; text-align: center;">
+        Authorized Signature: ___________________________ &nbsp;&nbsp;&nbsp; Date: ___________________
+    </div>
+</div>
+
+<script>
+    // Set today's date as default
+    document.getElementById('po-date').valueAsDate = new Date();
+
+    function addItem() {
+        const tbody = document.getElementById('items-body');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="item-desc" placeholder="Item description"></td>
+            <td><input type="number" class="item-qty" value="1" min="1"></td>
+            <td><input type="number" class="item-price" value="0.00" step="0.01"></td>
+            <td style="text-align: center;"><button class="btn btn-danger" onclick="removeItem(this)">Remove</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function removeItem(btn) {
+        btn.closest('tr').remove();
+    }
+
+    function generatePO() {
+        // Output From fields
+        document.getElementById('out-from-company').innerText = document.getElementById('from-company').value || 'N/A';
+        document.getElementById('out-from-address1').innerText = document.getElementById('from-address1').value;
+        document.getElementById('out-from-address2').innerText = document.getElementById('from-address2').value;
+        document.getElementById('out-from-contact').innerText = document.getElementById('from-contact').value;
+        
+        // Output To fields
+        document.getElementById('out-to-vendor').innerText = document.getElementById('to-vendor').value || 'N/A';
+        document.getElementById('out-to-address1').innerText = document.getElementById('to-address1').value;
+        document.getElementById('out-to-address2').innerText = document.getElementById('to-address2').value;
+        document.getElementById('out-to-contact').innerText = document.getElementById('to-contact').value;
+        
+        // Output Meta
+        document.getElementById('out-po-number').innerText = document.getElementById('po-number').value || 'N/A';
+        
+        const dateVal = document.getElementById('po-date').value;
+        if(dateVal) {
+            const dateObj = new Date(dateVal);
+            document.getElementById('out-po-date').innerText = dateObj.toLocaleDateString();
+        } else {
+            document.getElementById('out-po-date').innerText = 'N/A';
+        }
+
+        // Output Items
+        const outItemsBody = document.getElementById('out-items-body');
+        outItemsBody.innerHTML = '';
+        const itemRows = document.querySelectorAll('#items-body tr');
+        
+        let grandTotal = 0;
+
+        itemRows.forEach(row => {
+            const desc = row.querySelector('.item-desc').value;
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const total = qty * price;
+            
+            if (desc || qty > 0 || price > 0) {
+                grandTotal += total;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${desc}</td>
+                    <td style="text-align: center;">${qty}</td>
+                    <td style="text-align: right;">$${price.toFixed(2)}</td>
+                    <td style="text-align: right;">$${total.toFixed(2)}</td>
+                `;
+                outItemsBody.appendChild(tr);
+            }
+        });
+
+        document.getElementById('out-grand-total').innerText = '$' + grandTotal.toFixed(2);
+
+        // Switch View
+        document.getElementById('input-section').style.display = 'none';
+        document.getElementById('po-output').classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    function editPO() {
+        document.getElementById('input-section').style.display = 'block';
+        document.getElementById('po-output').classList.remove('active');
+        window.scrollTo(0, 0);
+    }
+</script>
+
+</body>
+</html>
